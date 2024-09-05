@@ -10,43 +10,22 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 public class ImageGenerator {
-    private static String city;
 
+    private final WeatherData weatherData;
     private BufferedImage resultImage;
 
     // 0 - black theme (by default) || 1 - white theme || 2 - season theme
     private static byte colorTheme = 0;
+    private final static String ImgPath = "src/main/resources/img";
 
     private static final String ResistSansMedium = "Resist Sans Text Medium";
     private static final String ResistSansLight = "Resist Sans Text Light";
 
-    private static String baseImgPath = "src/main/resources/img/black theme/base.png";
-    private static String weatherImgPath = "src/main/resources/img/black theme/weather images/";
-
-    public ImageGenerator() {
-        // Get weather data
-        WeatherData weatherData = new WeatherData(city);
-
-        // Merge weather image and base file
-        resultImage = mergeImages(weatherData.getWeatherCode());
-
-        // Initialize custom fonts
-        initializeFonts();
-
-        // Draw all needed text on merged image
-        if (resultImage != null) {
-            resultImage = drawTextOnImage(resultImage, weatherData);
-        }
-
-        // Send a message to console
-        System.out.println("Image successfully generated!");
-    }
 
     public ImageGenerator(String city) {
-        ImageGenerator.city = city;
 
         // Get weather data
-        WeatherData weatherData = new WeatherData(city);
+        weatherData = new WeatherData(city);
 
         // Merge weather image and base file
         resultImage = mergeImages(weatherData.getWeatherCode());
@@ -80,9 +59,62 @@ public class ImageGenerator {
         };
     }
 
+    private String getTheme() {
+        switch (colorTheme) {
+            // black theme
+            case 0 -> {
+                return "black";
+            }
+            // white theme
+            case 1 -> {
+                return "white";
+            }
+            // season theme
+            case 2 -> {
+                return getSeason();
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + getTheme());
+        }
+    }
+
+    private String getSeason() {
+        switch (Math.toIntExact(weatherData.getMonth())) {
+            case 12, 1, 2 -> {
+                return "winter";
+            }
+            case 3, 4, 5 -> {
+                return "spring";
+            }
+            case 6, 7, 8 -> {
+                return "summer";
+            }
+            case 9, 10, 11 -> {
+                return "autumn";
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + getSeason());
+        }
+    }
+
+    public static void changeTheme () {
+        colorTheme++;
+
+        if (colorTheme > 2)
+            colorTheme = 0;
+    }
+
     private BufferedImage mergeImages(Long weatherCode) {
-        // Initializing our path
-        weatherImgPath += getWeatherImageName(weatherCode) + ".png";
+        // Initializing our paths
+        String baseImgPath = ImgPath + "/bases/" + getTheme() + " base.png";
+
+        String weatherImgColor;
+        switch (getTheme()) {
+            case "white" -> weatherImgColor = "black";
+            case "summer" -> weatherImgColor = "summer";
+            default -> weatherImgColor = "white";
+        }
+
+        String weatherImgPath = ImgPath + "/weather images/" + weatherImgColor + "/"
+                + getWeatherImageName(weatherCode) + ".png";
 
         try {
             // Load the images
@@ -142,11 +174,14 @@ public class ImageGenerator {
 
         try {
             // Set the text color
-            if (colorTheme == 0) {
-                g.setColor(Color.white);
+            Color color = null;
+            if (getTheme().equals("white")) {
+                color = new Color(68, 68, 68);
             } else {
-                g.setColor(new Color(68,68,68));
+                color = Color.WHITE;
             }
+
+            g.setColor(color);
 
             // Set rendering hints to use antialiasing for our text
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
@@ -176,6 +211,10 @@ public class ImageGenerator {
 
             g.drawString(weatherData.getTime(), xPos, 110);
 
+            if(getTheme().equals("summer")) {
+               g.setColor(new Color(96, 60, 6));
+            }
+
             // Combine xPos calculation and drawing for remaining elements
             g.setFont(new Font(ResistSansLight, Font.PLAIN, 36));
             g.drawString(weatherData.getTemperature() + " °C", 395, 98);
@@ -193,23 +232,6 @@ public class ImageGenerator {
         return null;
     }
 
-    public static void changeTheme () {
-        colorTheme++;
-
-        if (colorTheme > 1)
-            colorTheme = 0;
-
-        switch (colorTheme) {
-            case 0 -> {
-                weatherImgPath = "src/main/resources/img/black theme/weather images/";
-                baseImgPath = "src/main/resources/img/black theme/base.png";
-            }
-            case 1 -> {
-                weatherImgPath = "src/main/resources/img/white theme/weather images/";
-                baseImgPath = "src/main/resources/img/white theme/base.png";
-            }
-        }
-    }
 
     public void saveImage() {
         // Saving an image

@@ -7,21 +7,21 @@ import org.json.simple.parser.JSONParser;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Scanner;
 
 public class WeatherData {
-    private String city;
-    private String date;
+    private static String city;
+    private Long day;
+    private Long month;
     private String time;
     private Long weatherCode = 0L;
     private double temperature = 0;
     private Long humidity = 0L;
     private double windSpeed = 0;
 
+
     public WeatherData(String city) {
-        this.city = city;
+        WeatherData.city = city;
 
         try {
             JSONObject cityLocationData = getLocationData(city);
@@ -29,7 +29,10 @@ public class WeatherData {
             double latitude = (double) cityLocationData.get("latitude");
             double longitude = (double) cityLocationData.get("longitude");
 
-            getWeatherData(latitude,longitude);
+            //System.out.println(latitude + '\n' + longitude);
+
+            getTimeData(latitude, longitude);
+            getCurrentWeatherData(latitude,longitude);
         }
 
         catch (Exception e) {
@@ -73,7 +76,7 @@ public class WeatherData {
         return null;
     }
 
-    private void getWeatherData(double latitude, double longitude){
+    private void getCurrentWeatherData(double latitude, double longitude){
         try{
             // 1. Fetch the API response based on API Link
             String url = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude +
@@ -96,15 +99,10 @@ public class WeatherData {
             JSONObject currentWeatherJson = (JSONObject) jsonObject.get("current");
 
             // Console out for debugging
-            //System.out.println(currentWeatherJson.toJSONString());
-
-            // Old format
-            //String date = (String) currentWeatherJson.get("time");
-            //String[] dateParts = date.split("T");
+            // System.out.println(currentWeatherJson.toJSONString());
 
             // 4. Fill the fields from JSON Object
-            this.date = String.valueOf(LocalDate.now());
-            this.time = String.valueOf(LocalTime.now()).substring(0, 5);
+
             this.weatherCode = (Long) currentWeatherJson.get("weather_code");
             this.temperature = (Double) currentWeatherJson.get("temperature_2m");
             this.humidity = (Long) currentWeatherJson.get("relative_humidity_2m");
@@ -112,6 +110,77 @@ public class WeatherData {
         }
 
         catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void getWeatherForecastData (double latitude, double longitude) {
+        try{
+            // 1. Fetch the API response based on API Link
+            String url = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude +
+                    "&longitude=" + longitude + "&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max";
+            HttpURLConnection apiConnection = fetchApiResponse(url);
+
+            // check for response status
+            // 200 - means that the connection was a success
+            assert apiConnection != null;
+            if(apiConnection.getResponseCode() != 200){
+                System.out.println("Error: Could not connect to API");
+            }
+
+            // 2. Read the response and convert store String type
+            String jsonResponse = readApiResponse(apiConnection);
+
+            // 3. Parse the string into a JSON Object
+            JSONParser parser = new JSONParser();
+            JSONObject jsonObject = (JSONObject) parser.parse(jsonResponse);
+            JSONObject currentWeatherJson = (JSONObject) jsonObject.get("current");
+
+            // Console out for debugging
+            // System.out.println(currentWeatherJson.toJSONString());
+
+            // 4. Fill the fields from JSON Object
+
+            this.weatherCode = (Long) currentWeatherJson.get("weather_code");
+            this.temperature = (Double) currentWeatherJson.get("temperature_2m");
+            this.humidity = (Long) currentWeatherJson.get("relative_humidity_2m");
+            this.windSpeed = (Double) currentWeatherJson.get("wind_speed_10m");
+        }
+
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void getTimeData(double latitude, double longitude){
+        try {
+            // 1. Fetch the API response based on API Link
+            String url = "https://timeapi.io/api/Time/current/coordinate?latitude=" + latitude + "&longitude=" + longitude;
+            HttpURLConnection apiConnection = fetchApiResponse(url);
+
+            // check for response status
+            // 200 - means that the connection was a success
+            assert apiConnection != null;
+            if(apiConnection.getResponseCode() != 200) {
+                System.out.println("Error: Could not connect to API");
+            }
+
+            // 2. Read the response and convert store String type
+            String jsonResponse = readApiResponse(apiConnection);
+
+            // 3. Parse the string into a JSON Object
+            JSONParser parser = new JSONParser();
+            JSONObject currentTimeJson = (JSONObject) parser.parse(jsonResponse);
+
+            // Console out for debugging
+            //System.out.println(currentTimeJson.toJSONString());
+
+            // 4. Fill the fields from JSON Object
+            this.day = (Long) currentTimeJson.get("day");
+            this.month = (Long) currentTimeJson.get("month");
+            this.time = String.valueOf(currentTimeJson.get("time"));
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -175,12 +244,12 @@ public class WeatherData {
         };
     }
 
-    public String getCity() {
+    public static String getCity() {
         return city;
     }
 
-    public String getDate() {
-        return date;
+    public Long getMonth() {
+        return month;
     }
 
     public String getTime() {
