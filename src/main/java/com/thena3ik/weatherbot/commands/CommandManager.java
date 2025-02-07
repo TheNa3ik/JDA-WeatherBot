@@ -2,6 +2,7 @@ package com.thena3ik.weatherbot.commands;
 
 import com.thena3ik.weatherbot.image.ImageGenerator;
 import com.thena3ik.weatherbot.parsers.WeatherData;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -18,6 +19,9 @@ import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CommandManager extends ListenerAdapter {
 
@@ -41,16 +45,16 @@ public class CommandManager extends ListenerAdapter {
             // Handles the weather command.
             // First, retrieves the "city" option value specified by the user.
             OptionMapping cityOption = event.getOption("city");
+            String cityRaw = null;
             String city = null;
-            if (cityOption != null) {
-                city = cityOption.getAsString();
 
-                
+            if (cityOption != null) {
+                cityRaw = cityOption.getAsString();
 
                 // Capitalize the first letter and make the rest lowercase for better presentation.
-                city = city.substring(0, 1).toUpperCase() + city.substring(1).toLowerCase();
-
-
+                UnaryOperator<String> capitalize = str ->
+                        str.substring(0,1).toUpperCase() + str.substring(1).toLowerCase();
+                city = Stream.of(cityRaw.split(" ")).map(capitalize).collect(Collectors.joining(" "));
             }
 
             // Acknowledge the interaction to let the user know the bot is processing the request.
@@ -68,6 +72,7 @@ public class CommandManager extends ListenerAdapter {
 
                 // Catch any exceptions that might occur during weather processing and send an ephemeral error message.
             } catch (Exception e) {
+                System.out.println(e.getMessage());
                 event.getHook().sendMessage("An error occurred while processing your weather request.")
                         .setEphemeral(true)
                         .queue();
@@ -92,6 +97,7 @@ public class CommandManager extends ListenerAdapter {
                         .queue();
             } catch (IOException e) {
                 // Re-throw IOException for further handling (logging, notifying user)
+                System.out.println(e.getMessage());
                 throw new RuntimeException(e);
             }
         }
