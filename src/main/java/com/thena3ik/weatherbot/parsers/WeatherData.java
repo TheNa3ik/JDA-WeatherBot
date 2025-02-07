@@ -36,7 +36,7 @@ public class WeatherData {
         }
 
         catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
@@ -71,7 +71,7 @@ public class WeatherData {
         }
 
         catch(Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         return null;
     }

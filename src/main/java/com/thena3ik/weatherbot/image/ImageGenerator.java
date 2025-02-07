@@ -139,7 +139,7 @@ public class ImageGenerator {
             // Returns the merged image
             return combinedImage;
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
 
         return null;
@@ -227,7 +227,7 @@ public class ImageGenerator {
             return image;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         return null;
     }
@@ -238,8 +238,9 @@ public class ImageGenerator {
         try {
             // Save the combined image
             ImageIO.write(resultImage, "PNG", new File("src/main/resources/img/result.png"));
+            //ImageIO.write(resultImage, "PNG", new File("D:/my folder/programming projects/java"));
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
