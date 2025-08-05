@@ -11,6 +11,6 @@ A Discord bot built with **Java** and **JDA**, providing weather data with custo
 
 ## 📸 Example Output
 
-![Weather Card Preview](assets/preview.png)
+![Weather Card Preview](assets/preview.gif)
 
 Made with ☕ by @TheNa3ik
